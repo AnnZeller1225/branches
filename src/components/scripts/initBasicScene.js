@@ -39,7 +39,7 @@ function getMouseCoord(e, canvas, mouse) {
 
 function initPointLight(scene) {
     const color = 0xffffff;
-    const intensity = 1.1;
+    const intensity = 1.2;
     const light = new THREE.AmbientLight(color, intensity);
     scene.add(light);
 }
@@ -95,6 +95,17 @@ function createSquare(model, scene) {
     light4.add(helper);
     return light4;
 }
+function updateCheckCollisionArr(arr, deletedId) {
+
+    let newArr = [];
+    arr.forEach((el) => {
+        if (deletedId !== el.userData.id) {
+            newArr.push(el);
+        }
+    });
+return newArr;
+}
+
 
 function isCollision(el, mas) {
     for (var i = 0; i < mas.length; i++) {
@@ -159,7 +170,7 @@ function drawBox(
         opacity: 0.1,
     });
     box = new THREE.Mesh(geometry, material);
-    box.userData = {...el }
+    box.userData = { ...el }
     let {
         x,
         y,
@@ -201,7 +212,7 @@ function combinePartsOfModel(el, scene) {
         group.name = "quadrant";
         // box.add(mesh);
         return mesh
-            // scene.add(mesh);
+        // scene.add(mesh);
     });
     // scene.add(group);
     return box;
@@ -287,7 +298,7 @@ function getSharpTexture(texture) {
 const loadTextureForBox = (texture, length, wallHeight) => {
     var frontTexture = new THREE.TextureLoader().load(
         `${texture.url}`,
-        function(tex) {
+        function (tex) {
             frontTexture.wrapS = frontTexture.wrapT = THREE.RepeatWrapping;
             frontTexture.repeat.set(
                 length / texture.width,
@@ -318,5 +329,6 @@ export {
     createFloor,
     getSharpTexture,
     combinePartsOfModel,
-    loadTextureForBox
+    loadTextureForBox,
+    updateCheckCollisionArr
 };

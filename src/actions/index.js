@@ -105,3 +105,18 @@ export const resetNewModel = (payload) => {
     payload: payload
   };
 };
+
+
+export const deleteModel = (payload) => {
+  return {
+    type: "DELETE_MODEL",
+    payload: payload
+  };
+};
+
+export const confirmModal = (payload) => {
+  return {
+    type: "CONFIRM_MODAL",
+    payload: payload
+  };
+};

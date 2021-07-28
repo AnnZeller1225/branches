@@ -6,16 +6,6 @@ import {
 } from "../../actions";
 import "./model-list.css";
 
-// id: "20",
-//     name: "sofa_2",
-//         type: "MODEL",
-//             url: "./models/sofa_02.glb",
-//                 scale: "2",
-//                     texture: "./url",
-//                         texture_width: "1",
-//                             dots: { x: "0", y: "0", z: "0" },
-// visible: true,
-//     locked: false,
 
 const ModelList = ({ modelList, selectReplaceBy, status, addModel }) => {
     if (status === 'replace') {

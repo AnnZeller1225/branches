@@ -6,7 +6,7 @@ import { compose } from "../../utils";
 import { resetModal, saveChanges } from "../../actions";
 import TextureList from "../texture-list/texture-list";
 import ModelList from "../model-list/model-list";
-
+import ModalConfirm from "../modal-confirm";
 const ModalWindow = ({
   modal,
   resetModal,
@@ -22,24 +22,34 @@ const ModalWindow = ({
   } else {
     text = "другое действие";
   }
-  return (
-    <div className={modal.isOpen ? "modal-w" : "hide"}>
-      <div className="modal">
-        <h2>{text}</h2>
-        {modal.typeOfChange === "change_texture" ? <TextureList /> : null}
-        {modal.typeOfChange === "replace" ? <ModelList status={modal.typeOfChange} /> : null}
-        {modal.typeOfChange === "add_model" ? <ModelList status={modal.typeOfChange} /> : null}
-        <div className="btn-w">
-          <button className="modal-btn" onClick={() => saveChanges()}>
-            Сохранить изменения
-          </button>
-          <button className="modal-btn btn-reset" onClick={() => resetModal()}>
-            Отмена
-          </button>
+
+  if (modal.typeOfChange === "delete_model") {
+    return <ModalConfirm />
+  } else {
+    return (
+
+      <div className={modal.isOpen ? "modal-w" : "hide"}>
+        <div className="modal">
+          <h2>{text}</h2>
+          {modal.typeOfChange === "change_texture" ? <TextureList /> : null}
+          {modal.typeOfChange === "replace" ? <ModelList status={modal.typeOfChange} /> : null}
+          {modal.typeOfChange === "add_model" ? <ModelList status={modal.typeOfChange} /> : null}
+          <div className="btn-w">
+            <button className="modal-btn" onClick={() => saveChanges()}>
+              Сохранить изменения
+            </button>
+            <button className="modal-btn btn-reset" onClick={() => resetModal()}>
+              Отмена
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+
+
+    );
+  }
+
+
 };
 
 class ModalWindowContainer extends Component {

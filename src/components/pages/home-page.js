@@ -11,19 +11,24 @@ import Navigation from "../navigation";
 import addImg from "../../img/icons/add.png";
 import handImg from "../../img/icons/hand.svg";
 import textureImg from "../../img/icons/texture.png";
+import basketImg from "../../img/icons/basket.png";
 import FloorList from "../floor-list";
 import Modal from "../modal-window";
-import { selectTypeOfChange, changeStatusCamera, selectActionModel } from "../../actions";
+
+import ModalConfirm from "../modal-confirm";
+import { selectTypeOfChange, changeStatusCamera, selectActionModel, deleteModel } from "../../actions";
+
 const HomePage = ({
   selectTypeOfChange,
   changeStatusCamera,
   activeObject,
-  camera,
+  camera, deleteModel,
   selectActionModel
 }) => {
   // console.log(camera, 'camera')
   return (
     <div>
+    {/* <ModalConfirm/> */}
       <Modal />
       <Navigation />
       <div className="main">
@@ -85,7 +90,16 @@ const HomePage = ({
             >
               <img src={addImg} alt="Logo" />
             </div>
-          </div>{" "}
+
+            <div
+              className="controls-btn"
+              onClick={() => selectTypeOfChange("delete_model")}
+            >
+              <img src={basketImg} alt="Logo" />
+            </div>
+
+          </div>
+
         </div>
       </div>{" "}
       <FloorList />

@@ -3,28 +3,29 @@ import cloneDeep from "lodash/cloneDeep";
 
 const initialState = {
     project_1: {
-        surfaces: [{
-            id: "1",
-            name: "table_03",
-            type: "MODEL",
-            url: "./models/table_03.glb",
-            dots: { x: "3", y: "0", z: "0" },
-            rotate: 0,
-            moveOnly: "XZ",
-            visible: true,
-            locked: false,
-        },
-        {
-            id: "4",
-            name: "red chair",
-            type: "MODEL",
-            url: "./models/chair_03_red.glb",
-            dots: { x: "-3", y: "0", z: "-1.5" },
-            rotate: 0,
-            moveOnly: "XZ",
-            visible: true,
-            locked: false,
-        },
+        surfaces: [
+            {
+                id: "1",
+                name: "table_03",
+                type: "MODEL",
+                url: "./models/table_03.glb",
+                dots: { x: "1", y: "0", z: "0" },
+                rotate: 0,
+                moveOnly: "XZ",
+                visible: true,
+                locked: false,
+            },
+            {
+                id: "4",
+                name: "red chair",
+                type: "MODEL",
+                url: "./models/chair_03_red.glb",
+                dots: { x: "-1", y: "0", z: "-1.5" },
+                rotate: 0,
+                moveOnly: "XZ",
+                visible: true,
+                locked: false,
+            },
             // {
             //     id: "2",
             //     name: "door",
@@ -224,10 +225,10 @@ const initialState = {
     // модели для замены
     modelList: [{
         id: "20",
-        name: "Стул бежевый",
+        name: "Стул серый",
         type: "MODEL",
-        url: "./models/chair_04_bezh.glb",
-        scale: "2",
+        url: "./models/chair_02.glb",
+        scale: "1",
         texture: "./url",
         texture_width: "1",
         rotate: 0,
@@ -237,7 +238,7 @@ const initialState = {
     },
     {
         id: "21",
-        name: "Стол",
+        name: "Стол черный ",
         type: "MODEL",
         url: "./models/table_03.glb",
         dots: { x: "3", y: "0", z: "0" },
@@ -248,9 +249,9 @@ const initialState = {
     },
     {
         id: "31",
-        name: "черный стол",
+        name: "Стол-пианино",
         type: "MODEL",
-        url: "./models/table_03.glb",
+        url: "./models/table_04.glb",
         scale: "1",
         rotate: 0,
         dots: { x: "0", y: "0", z: "0" },
@@ -259,9 +260,9 @@ const initialState = {
     },
     {
         id: "22",
-        name: "Стул_2",
+        name: "Диван бежевый",
         type: "MODEL",
-        url: "./models/chair_02.glb",
+        url: "./models/sofa_02.glb",
         scale: "1",
         rotate: 0,
         dots: { x: "0", y: "0", z: "0" },
@@ -269,29 +270,19 @@ const initialState = {
         locked: false,
     },
     {
-        id: "25",
-        name: "Настольная лампа",
+        id: "26",
+        name: "Тумба",
         type: "MODEL",
-        url: "./models/Lamp.glb",
-        rotate: 0,
-        dots: { x: "-1", y: "0", z: "-2" },
+        url: "./models/tumba.glb",
+        width: "0.1",
+        texture: "red",
+        texture_width: "1",
+        texture2: "blue",
+        dots: { x: "2", y: "0", z: "2" },
+        color: "red",
         visible: true,
         locked: false,
     },
-        // {
-        //   id: "26",
-        //   name: "tumba",
-        //  type: "MODEL",
-        //   url: "./models/tumba.glb",
-        //   width: "0.1",
-        //   texture: "red",
-        //   texture_width: "1",
-        //   texture2: "blue",
-        //   dots: { x: "2", y: "0", z: "2" },
-        //   color: "red",
-        //   visible: true,
-        //   locked: false,
-        // },
     ],
     textureList: [
         // {
@@ -382,7 +373,11 @@ const initialState = {
     modal: {
         isOpen: false,
         typeOfChange: '',
-    }
+    },
+    modalForConfirm: {
+        isOpen: false,
+        confirmed: false
+    },
 };
 
 const changeLockModel = (state, payload) => {
@@ -449,8 +444,6 @@ const selectModel = (state, payload) => {
         visible: visible,
         locked: false
     }
-
-    console.log(updateModel, 'updateModel');
     let activeModel = payload.id !== activeObject.selectedModel?.id ? updateModel : {};
     return {
         ...state,
@@ -461,6 +454,7 @@ const findModel = (arr, modelId) => {
     const findIndex = arr.findIndex(({ id }) => id === modelId);
     return findIndex;
 };
+
 const changePositionModel = (state, payload) => {
     const { project_1, activeObject, } = state;
     const index = findModel(project_1.surfaces, payload.id);
@@ -476,7 +470,6 @@ const changePositionModel = (state, payload) => {
         let selectedModel = activeObject.selectedModel;
         selectedModel.dots = model.dots;
         selectedModel.rotate = payload.rotate;
-        console.log(selectedModel.dots, 'dots');
         let updateActiveObject = {
             ...activeObject, selectedModel: {
                 ...selectedModel
@@ -495,24 +488,36 @@ const changePositionModel = (state, payload) => {
             ...state,
             project_1: project_1
         };
-    }else {
-    console.log("exseption changePositionModel ");
-    return {
-        ...state
-    }
+    } else {
+        console.log("exseption changePositionModel ");
+        return {
+            ...state
+        }
     }
 };
 
 const selectTypeOfChange = (state, payload) => {
-    const { modal, activeObject } = state;
-    // console.log(payload, 'selectTypeOfChange');
-    let status = modal.typeOfChange === payload ? 'reset' : payload;
+    const { modal, activeObject, modalForConfirm } = state;
 
-    return {
-        ...state,
-        modal: { ...modal, typeOfChange: status, isOpen: true },
-        activeObject: { ...activeObject, action: status }
-    };
+    if (payload === 'delete_model' && activeObject.selectedModel?.id) {
+        return {
+            ...state,
+            modal: { ...modal, typeOfChange: payload, isOpen: true },
+            activeObject: { ...activeObject, action: payload },
+            modalForConfirm: {
+                ...modalForConfirm,
+                isOpen: true
+            }
+        };
+    } else {
+        let status = modal.typeOfChange === payload ? 'reset' : payload;
+        return {
+            ...state,
+            modal: { ...modal, typeOfChange: status, isOpen: true },
+            activeObject: { ...activeObject, action: status }
+        };
+    }
+
 };
 const addModel = (state, payload) => {
     const { activeObject } = state;
@@ -525,9 +530,14 @@ const addModel = (state, payload) => {
     };
 }
 const resetSelectedModel = (state) => {
+    const { activeObject } = state;
     return {
         ...state,
-        currentModel: {},
+        activeObject: {
+            ...activeObject,
+            action: '',
+            selectedModel: {}
+        },
     };
 };
 const changeStatusCamera = (state, status) => {
@@ -704,6 +714,49 @@ const resetNewModel = (state) => {
         activeObject: { ...activeObject, newModel: {}, isSave: false }
     }
 }
+
+const deleteItem = (arr, idx) => {
+    return [...arr.slice(0, idx), ...arr.slice(idx + 1)]; // тут мы удаляем массив
+};
+
+const deleteModel = (state, payload) => {
+    const { project_1, modalForConfirm } = state;
+    const index = findModel(project_1.surfaces, payload.id);
+    let newSurfaces = deleteItem(project_1.surfaces, index)
+
+    console.log(' delete model', payload);
+    return {
+        ...state,
+        // modalForConfirm: {
+        //     ...modalForConfirm,
+        //     isOpen: true
+        // }
+        // project_1: {...project_1, surfaces: newSurfaces}
+    }
+}
+const filterArr = (arr, id) => {
+    return arr = arr.filter(el => el.id !== id);
+}
+// подтверждение удаления модели 
+const confirmModal = (state, payload) => {
+    const { project_1, activeObject } = state;
+    let updateSurfaces;
+    const selectedId = activeObject.selectedModel.id;
+
+    updateSurfaces = payload ? updateSurfaces = filterArr(project_1.surfaces, selectedId) : project_1.surfaces;
+ 
+    return {
+        ...state,
+        project_1: {
+            ...project_1, surfaces: updateSurfaces
+        },
+        modalForConfirm: {
+            isOpen: false,
+            confirmed: payload
+        }
+    }
+}
+
 const reducer = (state = initialState, action) => {
     switch (action.type) {
         case "CHANGE_POSITION_MODEL":
@@ -740,8 +793,10 @@ const reducer = (state = initialState, action) => {
             return selectActionModel(state, action.payload);
         case "RESET_NEW_MODEL":
             return resetNewModel(state);
-
-
+        case "DELETE_MODEL":
+            return deleteModel(state, action.payload);
+        case "CONFIRM_MODAL":
+            return confirmModal(state, action.payload);
         //
         default:
             return state;

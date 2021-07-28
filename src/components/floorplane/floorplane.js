@@ -20,7 +20,8 @@ import {
   selectWall,
   selectSurface,
   selectTypeOfChange,
-  resetNewModel
+  resetNewModel,
+  deleteModel
 } from "../../actions";
 
 import {
@@ -36,8 +37,8 @@ import {
   createFloor,
   getSharpTexture,
   loadTextureForBox,
+  updateCheckCollisionArr
 } from "../scripts/initBasicScene.js";
-import { Group } from "three";
 
 let scene,
   cameraPersp,
@@ -54,6 +55,7 @@ let scene,
   updateUseEffectTexture,
   updateUseEffectTexture__floor,
   updateUseEffectInstrum,
+  updateUseEffectDelete,
   clock,
   cameraControls,
   axesHelper,
@@ -70,7 +72,7 @@ let scene,
   mouse;
 initGlobalLets();
 
-let selectWallDispatch, selectSurfaceDispatch, selectTypeOfChangeDispatch, changePositionModelDispatch, selectModelDispatch;
+let selectWallDispatch, selectSurfaceDispatch, selectTypeOfChangeDispatch, resetSelectedModelDispatch, changePositionModelDispatch, selectModelDispatch, deleteModelDispatch;
 let canvas = renderer.domElement;
 let clickManager = new InteractionManager(
   renderer,
@@ -101,7 +103,9 @@ const FloorPlane = ({
   selectTypeOfChange,
   modal,
   activeObject,
-  resetNewModel
+  resetNewModel,
+  modalForConfirm,
+  resetSelectedModel
 }) => {
   const { surfaces } = project;
   // console.log(currentTexture, "currentTexture");
@@ -112,16 +116,21 @@ const FloorPlane = ({
   const [moveModel, setMoveModel] = useState(null);
   const [rotateModel, setRotateModel] = useState(null);
   const [cameraPanorama, setCameraPanorama] = useState(null);
-  const [prevClickModel, setPrevClickModel] = useState(null);
   const [changeTexture, setChangeTexture] = useState(null);
   const [changeTextureFloor, setChangeTextureFloor] = useState(null);
   const [resetInstr, setResetInstr] = useState(null);
+
+  const [deleteModel, setDeleteModel] = useState(null);
 
   selectWallDispatch = selectWall; // для передачи локального dispach в addEventListener внешний
   selectSurfaceDispatch = selectSurface;
   selectTypeOfChangeDispatch = selectTypeOfChange;
   changePositionModelDispatch = changePositionModel;
   selectModelDispatch = selectModel;
+  resetSelectedModelDispatch = resetSelectedModel;
+
+
+  deleteModelDispatch = deleteModel;
   checkUpdateForReplace();
   checkUpdateForVisibility();
   checkUpdateForAddModel();
@@ -131,6 +140,7 @@ const FloorPlane = ({
   checkUpdateTexture__wall();
   checkUpdateTexture__floor();
   checkUpdateInstrum();
+  checkUpdateDeleteModel();
   // getCube(scene);
 
   // отрисовывает сцену и свет
@@ -157,22 +167,11 @@ const FloorPlane = ({
 
   // если меняется visible model
   // useEffect(() => {
-  //   // console.log("useEffect_3");
-  //   if (currentModel.id) {
-  //     // console.log("useEffect_3 ", " есть текущая модель, меняем видимость");
-
-  //     let model = findModel(scene.children, currentModel.id);
-  //     model.visible = currentModel.visible;
-  //     updateUseEffectVisible = false;
-  //   }
-
-  //   // findModel(scene.children, id)
   // }, [visibleModel]);
 
   // если добавляем модель
   useEffect(() => {
     if (activeObject.newModel.id && activeObject.isSave && updateForAddModel) {
-      console.log("useEffect_4  добавляем модель ");
       loadModel2(activeObject.newModel);
       updateForAddModel = false;
       resetNewModel(); // после загрузки модели сбрасываем выбранну. модели в модалке
@@ -261,28 +260,56 @@ const FloorPlane = ({
         let { x, y, z } = activeObject.selectedModel.dots;
         root.position.set(Number(x), Number(y), Number(z));
 
-        // console.log(root.userData, ' root UD');
         scene.add(root);
         transformControledModel = root;
+        // scene.remove(findModel(scene.children, activeObject.selectedModel.id));
 
-        addTransformControl(root);
-        root.addEventListener("click", () => {
-          // addTransformControl(root);
-          root.userData.click += 1;
-          highlightModel(root, activeObject.selectedModel);
-        });
+        // control.detach();
+        // control.dispose();
+        let j = {
+          id: 1
+        }
+
+        // scene.remove(control);
+        // console.log(scene.children);
+        // root.addEventListener("click", () => {
+        //   addTransformControl(root);
+        //   root.userData.click += 1;
+        //   highlightModel(root, activeObject.selectedModel);
+        // });
         clickManager.add(root);
-
         checkCollisionModels.push(root);
+
+
+
+        checkCollisionModels = updateCheckCollisionArr(checkCollisionModels, activeObject.selectedModel.id);
         wallList.push(root);
         outlinedArr.push(root);
 
-        scene.remove(findModel(scene.children, activeObject.selectedModel.id));
         resetNewModel();
 
       });
+
+
     }
   }, [replaceModel]);
+  // удаление модели
+  useEffect(() => {
+    if (
+      activeObject.action === "delete_model" && activeObject.selectedModel?.id && updateUseEffectDelete
+    ) {
+      updateUseEffectDelete = false;
+
+      let model = findModel(scene.children, activeObject.selectedModel.id)
+      model.material = undefined;
+      model.geometry = undefined;
+      control.detach();
+      scene.remove(model);
+      scene.remove(control)
+      resetSelectedModel();
+    }
+  }, [deleteModel]);
+
 
   // сброс стрелок для моделей
   useEffect(() => {
@@ -408,6 +435,19 @@ const FloorPlane = ({
       updateUseEffectInstrum = true;
     }
   }
+
+  function checkUpdateDeleteModel() {
+    if (
+      activeObject.action === "delete_model" && activeObject.selectedModel?.id &&
+      updateUseEffectDelete === false && modalForConfirm.confirmed
+    ) {
+
+      setDeleteModel(deleteModel + 1);
+      updateUseEffectDelete = true;
+    }
+  }
+
+
   // стандартная функция добавленияя модели на сцену
   function loadModel(modelJson) {
 
@@ -423,16 +463,22 @@ const FloorPlane = ({
       root.position.set(Number(x), Number(y), Number(z));
 
       root.addEventListener("click", (event) => {
+
         root.userData.click += 1;
         transformControledModel = root;
-        addTransformControl(root);
         highlightModel(root, modelJson);
+
+        // выбивало ошибку при удалении моделей, делаем проверку на то, состоит ли в сцене модель
+        if (root.parent) {
+          addTransformControl(root);
+        }
       });
       clickManager.add(root);
       checkCollisionModels.push(root);
       wallList.push(root);
       outlinedArr.push(root);
       scene.add(root);
+
     });
   }
 
@@ -526,7 +572,9 @@ class FloorPlaneContainer extends Component {
       currentSurface,
       modal,
       activeObject,
-      resetNewModel
+      resetNewModel,
+      deleteModel,
+      modalForConfirm
     } = this.props;
 
     return (
@@ -550,6 +598,8 @@ class FloorPlaneContainer extends Component {
           modal={modal}
           activeObject={activeObject}
           resetNewModel={resetNewModel}
+          deleteModel={deleteModel}
+          modalForConfirm={modalForConfirm}
         />{" "}
       </div>
     );
@@ -563,7 +613,8 @@ const mapStateToProps = ({
   addedModel,
   camera,
   modal,
-  activeObject
+  activeObject,
+  modalForConfirm
 }) => {
   return {
     project_1,
@@ -572,7 +623,8 @@ const mapStateToProps = ({
     addedModel,
     camera,
     modal,
-    activeObject
+    activeObject,
+    modalForConfirm
   };
 };
 const mapDispatchToProps = (dispatch) => {
@@ -585,6 +637,7 @@ const mapDispatchToProps = (dispatch) => {
     selectSurface: (id) => dispatch(selectSurface(id)),
     selectTypeOfChange: (status) => dispatch(selectTypeOfChange(status)),
     resetNewModel: () => dispatch(resetNewModel()),
+    deleteModel: (obj) => dispatch(deleteModel(obj))
   };
 };
 
@@ -647,6 +700,7 @@ function initGlobalLets() {
   updateUseEffectTexture = false;
   updateUseEffectTexture__floor = false;
   updateUseEffectInstrum = false;
+  updateUseEffectDelete = false;
 
   wallList = []; // список стен доступных для клика
   selectedObjects = []; // для обводки
@@ -746,15 +800,12 @@ function removeAllHightLight(arr) {
 }
 function addTransformControl(model) {
   model.userData.currentPosition = new THREE.Vector3();
-  // let { x, y, z } = model.userData.dots;
-  // model.userData.currentPosition = { x: Number(x), y: Number(y), z: Number(z)}
-  // console.log(model.userData.currentPosition, model.userData.dots, ' model.userData in TC');
 
   control.addEventListener("change", render);
   control.addEventListener(
     "objectChange",
     function (el) {
-      isCollision(el, checkCollisionModels); // проблема где то тут
+      // isCollision(el, checkCollisionModels); // проблема где то тут
       el.target.children[0].object.userData.currentPosition.copy(
         el.target.children[0].object.position
       );
@@ -794,7 +845,7 @@ function removeHightLight(model) {
   selectedObjects = [];
   outlinePass.selectedObjects = selectedObjects;
   addSelectedObject(model);
-  resetSelectedModel();
+  resetSelectedModelDispatch();
 }
 
 function highlightModel(model) {
@@ -817,7 +868,7 @@ function highlightModel(model) {
   } else if (model.userData.selected === true) {
     // console.log("была true");
     needOutline = false;
-    removeHightLight(model, resetSelectedModel);
+    removeHightLight(model);
     model.userData.selected = false;
   } else {
     console.log("exseption highlightModel");
